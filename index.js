@@ -8,7 +8,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.hmig4.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
@@ -31,6 +31,7 @@ async function run() {
 
     const movieCollection = client.db('chorkiFlex').collection('allmovies');
     const userCollection = client.db('chorkiFlex').collection('allusers');
+    const favouriteCollection = client.db('chorkiFlex').collection('favouritemovies');
 
     app.get('/movies', async (_req, res) => {
         const movies = movieCollection.find();
@@ -38,21 +39,60 @@ async function run() {
         res.send(result);
     })
 
-    app.post("/movie", async (req, res) => {
+    app.get('/featuredmovies', async(req, res) => {
+      console.log("featured Hit");
+      const movies = movieCollection.find().sort({"rating": -1}).limit(6);
+      const result = await movies.toArray();
+      res.send(result);
+    })
+
+    app.get("/favourite", async(req, res) =>{
+      const favEmail = req.body;
+      const query = {favEmail};
+      const favouriteMovies = favouriteCollection.find(query);
+      const result = await favouriteMovies.toArray();
+      res.send(result);
+    })
+
+    app.delete('/movie/:id', async(req, res) => {
+      const id = req.params.id;
+      const query = {_id: new ObjectId(id)};
+      const result = await movieCollection.deleteOne(query);
+      res.send(result);
+    })
+
+    app.post("/movies", async (req, res) => {
         const movie = req.body;
         const result = await movieCollection.insertOne(movie);
         res.send(result);
     })
     
+    app.post('/user', async (req, res) => {
+        const email = req.body.email;
+        const query = {email};
+        const result = await userCollection.findOne(query);
+        res.send(result);
+    })
 
-
-    // user related routes
     app.put("/user", async (req, res) => {
         const user = req.body;
         const result = await userCollection.insertOne(user);
         res.send(result);
     })
 
+    app.post("/favourite", async(req, res) =>{
+      const item = req.body;
+      const result = await favouriteCollection.insertOne(item);
+      res.send(result);
+    })
+
+    app.get('/details/:id', async(req, res) => {
+      const id = req.params.id;
+      const query = {_id: new ObjectId(id)}
+      const result = await movieCollection.findOne(query);
+      res.send(result);
+    })
+    
     app.patch("/user", async(req, res)=>{
         const user = req.body;
         const filter = {email:user.email};
@@ -66,7 +106,6 @@ async function run() {
         res.send(result);
     })
 
-
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // Ensures that the client will close when you finish/error
@@ -75,8 +114,10 @@ async function run() {
 }
 run().catch(console.dir);
 
+app.get('/', (req, res) => {
+    res.send("ChorkiFlex is Connected.")
+})
 
-
-app.listen(() => {
+app.listen(port, () => {
     console.log(`Listening from the port number: ${port}`);
 });
