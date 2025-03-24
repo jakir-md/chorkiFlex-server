@@ -12,7 +12,6 @@ const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.hmig4.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
-// Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
   serverApi: {
     version: ServerApiVersion.v1,
@@ -42,7 +41,6 @@ async function run() {
     });
 
     app.get("/featuredmovies", async (req, res) => {
-      console.log("featured Hit");
       const movies = movieCollection.find().sort({ rating: -1 }).limit(6);
       const result = await movies.toArray();
       res.send(result);
@@ -102,7 +100,7 @@ async function run() {
       res.send(result);
     });
 
-    app.patch("/user", async (req, res) => {
+    app.post("/userupdate", async (req, res) => {
       const user = req.body;
       const filter = { email: user.email };
       const updatedDoc = {
